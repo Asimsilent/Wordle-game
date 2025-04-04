@@ -9,6 +9,7 @@ function App() {
     isGameOver: false,
     isCorrect: null,
     curTryIndex: 0,
+    validWords: [],
   });
 
   useEffect(() => {
@@ -19,7 +20,12 @@ function App() {
 
       if (e.key === "Enter") {
         if (gameState.curTry.length !== 5) {
-          console.log("enter for unfill");
+          console.log("Enter a 5-letter word");
+          return;
+        }
+
+        if (!gameState.validWords.includes(gameState.curTry)) {
+          console.log("Invalid word, please try a valid word");
           return;
         }
 
@@ -30,7 +36,7 @@ function App() {
               gameState.curTry;
             return { ...prevTries, tries: newTry, curTry: "", curTryIndex: 0 };
           });
-          console.log("try has been set");
+          console.log("Try has been set");
         }
 
         if (gameState.curTry === gameState.word) {
@@ -90,16 +96,28 @@ function App() {
 
   useEffect(() => {
     async function fetchWord() {
-      const res = await fetch("/words.json");
-      const data = await res.json();
-      const randomWord = data[Math.floor(Math.random() * data.length)];
-      setGameState((perState) => ({
-        ...perState,
-        word: randomWord,
-      }));
+      try {
+        const res = await fetch(
+          "https://api.datamuse.com/words?sp=?????&max=1000"
+        );
+
+        const data = await res.json();
+
+        const ValidWords = data.map((value) => value.word);
+        console.log(ValidWords);
+
+        const randomWord = data[Math.floor(Math.random() * data.length)].word;
+        setGameState((perState) => ({
+          ...perState,
+          word: randomWord || "",
+          validWords: ValidWords,
+        }));
+      } catch (error) {
+        console.error("Error fetching word list", error);
+      }
     }
     fetchWord();
-  }, [gameState.word]);
+  }, []);
 
   function resetGame() {
     setGameState({
@@ -108,6 +126,7 @@ function App() {
       curTry: "",
       isGameOver: false,
       isCorrect: null,
+      curTryIndex: 0,
     });
   }
 
