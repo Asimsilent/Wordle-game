@@ -1,6 +1,6 @@
 const ATTEMPT_LENGTH = 5;
 
-function Line({ attempt, isFinal, word }) {
+function Line({ attempt, isFinal, word, curTryIndex }) {
   const getLetterStates = () => {
     const secretLetters = [...word];
     const guessLetters = [...attempt];
@@ -16,15 +16,15 @@ function Line({ attempt, isFinal, word }) {
 
     for (let i = 0; i < ATTEMPT_LENGTH; i++) {
       if (result[i] === "incorrect") {
-      const findIndex = secretLetters.findIndex(
-        (char, index) => char === guessLetters[i]
-      );
+        const findIndex = secretLetters.findIndex(
+          (char, index) => char === guessLetters[i]
+        );
 
-      if (findIndex > -1) {
-        result[i] = "close";
-        secretLetters[findIndex] = null;
+        if (findIndex > -1) {
+          result[i] = "close";
+          secretLetters[findIndex] = null;
+        }
       }
-    }
     }
     return result;
   };
@@ -35,8 +35,13 @@ function Line({ attempt, isFinal, word }) {
         .map((_, i) => {
           const char = attempt[i] || "";
           const state = isFinal ? getLetterStates()[i] : "";
+          const isCurActive = i === curTryIndex;
           return (
-            <div key={i} className={`box ${state}`} data-testid={`letter-${i}`}>
+            <div
+              key={i}
+              className={`box ${state} ${isCurActive ? "active" : ""}`}
+              data-testid={`letter-${i}`}
+            >
               {char}
             </div>
           );

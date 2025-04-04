@@ -8,6 +8,7 @@ function App() {
     curTry: "",
     isGameOver: false,
     isCorrect: null,
+    curTryIndex: 0,
   });
 
   useEffect(() => {
@@ -27,7 +28,7 @@ function App() {
             const newTry = [...prevTries.tries];
             newTry[prevTries.tries.findIndex((val) => val == null)] =
               gameState.curTry;
-            return { ...prevTries, tries: newTry, curTry: "" };
+            return { ...prevTries, tries: newTry, curTry: "", curTryIndex: 0 };
           });
           console.log("try has been set");
         }
@@ -45,6 +46,7 @@ function App() {
         setGameState((perState) => ({
           ...perState,
           curTry: gameState.curTry.slice(0, -1),
+          curTryIndex: Math.max(perState.curTryIndex - 1, 0),
         }));
         return;
       }
@@ -54,6 +56,7 @@ function App() {
           setGameState((perState) => ({
             ...perState,
             curTry: perState.curTry + e.key,
+            curTryIndex: perState.curTryIndex + 1,
           }));
         } else {
           console.log("more words");
@@ -78,7 +81,8 @@ function App() {
     }
     if (
       gameState.tries.findIndex((val) => val == null) === -1 &&
-      !gameState.isCorrect && !gameState.isGameOver
+      !gameState.isCorrect &&
+      !gameState.isGameOver
     ) {
       failed();
     }
@@ -89,7 +93,10 @@ function App() {
       const res = await fetch("/words.json");
       const data = await res.json();
       const randomWord = data[Math.floor(Math.random() * data.length)];
-      setGameState((perState) => ({ ...perState, word: randomWord }));
+      setGameState((perState) => ({
+        ...perState,
+        word: randomWord,
+      }));
     }
     fetchWord();
   }, [gameState.word]);
@@ -116,27 +123,37 @@ function App() {
             attempt={isCurrentGuess ? gameState.curTry : attempt ?? ""}
             isFinal={!isCurrentGuess && attempt != null}
             word={gameState.word}
+            curTryIndex={isCurrentGuess && gameState.curTryIndex}
           />
         );
       })}
+
+      <button onClick={resetGame} className="button">
+        Reset Game
+      </button>
+
       {gameState.isCorrect === true && (
-        <p>
+        <p className="win-message">
           You have won the game in{" "}
-          {gameState.tries.findIndex((val) => val == null) === -1
-            ? 6
-            : gameState.tries.findIndex((val) => val == null)}{" "}
+          <span>
+            {gameState.tries.findIndex((val) => val == null) === -1
+              ? 6
+              : gameState.tries.findIndex((val) => val == null)}
+          </span>{" "}
           attempt
         </p>
       )}
 
       {gameState.isCorrect === false && (
         <>
-          {" "}
-          <p>You have lost the game, you tries ended</p>
-          <p>Correct word is {gameState.word}</p>
+          <p className="loss-message">
+            You have lost the game, you tries ended
+          </p>
+          <p className="loss-message">
+            Correct word is <span>{gameState.word.toUpperCase()}</span>
+          </p>
         </>
       )}
-      <button onClick={resetGame}>Reset game</button>
     </div>
   );
 }
