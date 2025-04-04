@@ -1,0 +1,62 @@
+/* Reset default margins/padding and set box-sizing */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Root styles (covers the entire app) */
+#root {
+  min-height: 100vh; /* Full viewport height */
+  width: 100%; /* Full width */
+  display: flex; /* Flex layout for centering */
+  flex-direction: column; /* Stack children vertically */
+  align-items: center; /* Center horizontally */
+  justify-content: center; /* Center vertically (optional) */
+  font-family: "Segoe UI", Arial, sans-serif; /* Default font */
+  background: #333; /* Light gray background */
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  #root {
+    padding: 10px; /* Reduce padding on small screens */
+  }
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.line {
+  display: flex;
+  gap: 5px;
+}
+
+.box {
+  border: 1px solid black;
+  width: 50px;
+  height: 50px;
+  background-color: #40463b87;
+  color: rgba(255, 255, 255, 0.508);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-transform: uppercase;
+  font-size: 2.5rem;
+  font-weight: 500;
+}
+
+.correct{
+  background-color: lightgreen;
+}
+
+.close{
+  background-color: yellow;
+}
+
+.incorrect{
+  background-color: rgba(164, 40, 40, 0.332);
+}
