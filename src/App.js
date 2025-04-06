@@ -18,7 +18,7 @@ function App() {
     )
   );
   const inputRef = useRef(null);
-  const lastValue = useRef("");
+  const virtualKeyboard = useRef([]);
 
   // Mobile input setup
   useEffect(() => {
@@ -148,59 +148,129 @@ function App() {
     fetchWord();
   }, []);
 
-  const handleMobileInput = (e) => {
-    if (!isMobile) return;
+  // Mobile input handler - completely new approach
+  const handleMobileKeyPress = (key) => {
+    if (gameState.isGameOver) return;
 
-    const value = e.target.value.toLowerCase();
+    if (key === "Enter") {
+      if (gameState.curTry.length === 5) {
+        setGameState((prev) => {
+          const newTry = [...prev.tries];
+          newTry[prev.tries.findIndex((val) => val == null)] = prev.curTry;
+          const isCorrect = prev.curTry === prev.word;
+          return {
+            ...prev,
+            tries: newTry,
+            curTry: "",
+            curTryIndex: 0,
+            isGameOver: isCorrect,
+            isCorrect: isCorrect,
+          };
+        });
+      }
+      return;
+    }
 
-    // Detect backspace (keyboard's X button)
-    if (value.length < lastValue.current.length) {
+    if (key === "Backspace") {
       setGameState((prev) => ({
         ...prev,
         curTry: prev.curTry.slice(0, -1),
         curTryIndex: Math.max(prev.curTryIndex - 1, 0),
       }));
-    }
-    // Detect new character
-    else if (value.length > lastValue.current.length) {
-      const newChar = value.slice(-1);
-      if (/^[a-z]$/.test(newChar) && gameState.curTry.length < 5) {
-        setGameState((prev) => ({
-          ...prev,
-          curTry: prev.curTry + newChar,
-          curTryIndex: prev.curTryIndex + 1,
-        }));
-      }
+      return;
     }
 
-    lastValue.current = value;
-    e.target.value = ""; // Reset input
-  };
-
-  const handleMobileSubmit = () => {
-    if (gameState.curTry.length === 5 && !gameState.isGameOver) {
-      // Your existing submit logic
-      setGameState((prev) => {
-        const newTry = [...prev.tries];
-        newTry[prev.tries.findIndex((val) => val == null)] = prev.curTry;
-        const isCorrect = prev.curTry === prev.word;
-        return {
-          ...prev,
-          tries: newTry,
-          curTry: "",
-          curTryIndex: 0,
-          isGameOver: isCorrect,
-          isCorrect: isCorrect,
-        };
-      });
+    if (/^[a-z]$/.test(key) && gameState.curTry.length < 5) {
+      setGameState((prev) => ({
+        ...prev,
+        curTry: prev.curTry + key,
+        curTryIndex: prev.curTryIndex + 1,
+      }));
     }
   };
 
-  const handleScreenClick = () => {
-    if (isMobile && inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
+  // Mobile keyboard component
+  const MobileKeyboard = () => (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: "#f0f0f0",
+        padding: "10px",
+        display: "grid",
+        gridTemplateColumns: "repeat(10, 1fr)",
+        gap: "5px",
+        zIndex: 10,
+      }}
+    >
+      {[
+        "q",
+        "w",
+        "e",
+        "r",
+        "t",
+        "y",
+        "u",
+        "i",
+        "o",
+        "p",
+        "a",
+        "s",
+        "d",
+        "f",
+        "g",
+        "h",
+        "j",
+        "k",
+        "l",
+        "z",
+        "x",
+        "c",
+        "v",
+        "b",
+        "n",
+        "m",
+      ].map((char) => (
+        <button
+          key={char}
+          onClick={() => handleMobileKeyPress(char)}
+          style={{
+            padding: "10px",
+            fontSize: "18px",
+            border: "none",
+            borderRadius: "5px",
+            backgroundColor: "#fff",
+          }}
+        >
+          {char}
+        </button>
+      ))}
+      <button
+        onClick={() => handleMobileKeyPress("Backspace")}
+        style={{
+          gridColumn: "span 3",
+          padding: "10px",
+          backgroundColor: "#ff4444",
+          color: "white",
+        }}
+      >
+        ⌫
+      </button>
+      <button
+        onClick={() => handleMobileKeyPress("Enter")}
+        style={{
+          gridColumn: "span 3",
+          padding: "10px",
+          backgroundColor: "#4CAF50",
+          color: "white",
+        }}
+      >
+        Enter
+      </button>
+    </div>
+  );
 
   function resetGame() {
     setGameState({
@@ -214,54 +284,12 @@ function App() {
   }
 
   return (
-    <div className="app" onClick={handleScreenClick}>
+    <div className="app">
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
 
-      {/* Mobile Input */}
-      {isMobile && (
-        <div style={{ position: "relative" }}>
-          <input
-            ref={inputRef}
-            type="text"
-            onChange={handleMobileInput}
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: 0,
-              width: "100%",
-              height: "60px",
-              opacity: 0,
-              zIndex: 10,
-              fontSize: "16px",
-            }}
-            autoFocus
-            inputMode="text"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="none"
-            spellCheck="false"
-          />
-          {/* Mobile Submit Button */}
-          <button
-            onClick={handleMobileSubmit}
-            style={{
-              position: "fixed",
-              bottom: "20px",
-              right: "20px",
-              padding: "12px 24px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontSize: "16px",
-              zIndex: 10,
-            }}
-          >
-            Submit
-          </button>
-        </div>
-      )}
+      {/* Add mobile keyboard */}
+      {isMobile && <MobileKeyboard />}
 
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
