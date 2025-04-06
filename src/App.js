@@ -12,72 +12,81 @@ function App() {
     validWords: [],
   });
 
-  const inputRef = useRef(null);
+   
+  const inputRef = useRef(null); // Added for mobile keyboard
 
-  function handleTry(e) {
-    if (gameState.isGameOver) {
-      return;
-    }
+  // Added useEffect to focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
-    if (e.key === "Enter") {
-      if (gameState.curTry.length !== 5) {
-        console.log("Enter a 5-letter word");
+  // Added click handler to focus input when screen is tapped
+  const handleScreenClick = () => {
+    inputRef.current?.focus();
+  };
+  
+
+  useEffect(() => {
+    function handleTry(e) {
+      if (gameState.isGameOver) {
         return;
       }
 
-      // if (!gameState.validWords.includes(gameState.curTry)) {
-      //   console.log("Invalid word, please try a valid word");
-      //   return;
-      // }
+      if (e.key === "Enter") {
+        if (gameState.curTry.length !== 5) {
+          console.log("Enter a 5-letter word");
+          return;
+        }
 
-      if (gameState.curTry.length === 5) {
-        setGameState((prevTries) => {
-          const newTry = [...prevTries.tries];
-          newTry[prevTries.tries.findIndex((val) => val == null)] =
-            gameState.curTry;
-          return { ...prevTries, tries: newTry, curTry: "", curTryIndex: 0 };
-        });
-        console.log("Try has been set");
+        // if (!gameState.validWords.includes(gameState.curTry)) {
+        //   console.log("Invalid word, please try a valid word");
+        //   return;
+        // }
+
+        if (gameState.curTry.length === 5) {
+          setGameState((prevTries) => {
+            const newTry = [...prevTries.tries];
+            newTry[prevTries.tries.findIndex((val) => val == null)] =
+              gameState.curTry;
+            return { ...prevTries, tries: newTry, curTry: "", curTryIndex: 0 };
+          });
+          console.log("Try has been set");
+        }
+
+        if (gameState.curTry === gameState.word) {
+          setGameState((perState) => ({
+            ...perState,
+            isGameOver: true,
+            isCorrect: true,
+          }));
+        }
       }
 
-      if (gameState.curTry === gameState.word) {
+      if (e.key === "Backspace") {
         setGameState((perState) => ({
           ...perState,
-          isGameOver: true,
-          isCorrect: true,
+          curTry: gameState.curTry.slice(0, -1),
+          curTryIndex: Math.max(perState.curTryIndex - 1, 0),
         }));
+        return;
+      }
+
+      if (/^[a-z]$/i.test(e.key)) {
+        if (gameState.curTry.length < 5) {
+          setGameState((perState) => ({
+            ...perState,
+            curTry: perState.curTry + e.key,
+            curTryIndex: perState.curTryIndex + 1,
+          }));
+        } else {
+          console.log("more words");
+        }
       }
     }
-
-    if (e.key === "Backspace") {
-      setGameState((perState) => ({
-        ...perState,
-        curTry: gameState.curTry.slice(0, -1),
-        curTryIndex: Math.max(perState.curTryIndex - 1, 0),
-      }));
-      return;
-    }
-
-    if (/^[a-z]$/i.test(e.key)) {
-      if (gameState.curTry.length < 5) {
-        setGameState((perState) => ({
-          ...perState,
-          curTry: perState.curTry + e.key,
-          curTryIndex: perState.curTryIndex + 1,
-        }));
-      } else {
-        console.log("more words");
-      }
-    }
-  }
-
-  useEffect(() => {
-    inputRef.current?.focus();
-
     window.addEventListener("keydown", handleTry);
 
     return () => window.removeEventListener("keydown", handleTry);
-  }, []);
+  }, [gameState]);
 
   useEffect(() => {
     // console.log(gameState.curTry);
@@ -133,31 +142,12 @@ function App() {
       isCorrect: null,
       curTryIndex: 0,
     });
-    inputRef.current?.focus();
   }
 
   return (
-    <div className="app">
+    <div className="app" onClick={handleScreenClick}>
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
-
-      <input
-        type="text"
-        ref={inputRef} // Reference to focus on it
-        style={{
-          position: "absolute",
-          opacity: 0, // Still make it invisible
-          height: "1px", // Keep height minimal
-          width: "1px", // Keep width minimal
-          border: "none", // Remove any border
-          padding: 0, // Remove padding
-          margin: 0, // Remove margin
-          visibility: "hidden", // Make it invisible but still focusable
-          zIndex: 9999, // Ensure it stays on top
-        }}
-        onChange={() => {}} // Placeholder for change handler (if needed)
-        onClick={() => inputRef.current?.focus()} // Manually trigger focus if clicked
-      />
 
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
