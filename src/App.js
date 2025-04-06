@@ -18,7 +18,6 @@ function App() {
     )
   );
   const inputRef = useRef(null);
-  const virtualKeyboard = useRef([]);
 
   // Mobile input setup
   useEffect(() => {
