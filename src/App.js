@@ -141,6 +141,24 @@ function App() {
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
 
+      <input
+        type="text"
+        ref={inputRef} // Reference to focus on it
+        style={{
+          position: "absolute",
+          opacity: 0, // Still make it invisible
+          height: "1px", // Keep height minimal
+          width: "1px", // Keep width minimal
+          border: "none", // Remove any border
+          padding: 0, // Remove padding
+          margin: 0, // Remove margin
+          visibility: "hidden", // Make it invisible but still focusable
+          zIndex: 9999, // Ensure it stays on top
+        }}
+        onChange={() => {}} // Placeholder for change handler (if needed)
+        onClick={() => inputRef.current?.focus()} // Manually trigger focus if clicked
+      />
+
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
           i === gameState.tries.findIndex((val) => val == null);
