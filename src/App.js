@@ -18,40 +18,19 @@ function App() {
     )
   );
   const inputRef = useRef(null);
-  const lastInput = useRef(""); // Track input value
 
-  // Detect mobile device
-  // useEffect(() => {
-  //   const checkMobile = () => {
-  //     const isMob =
-  //       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-  //         navigator.userAgent
-  //       );
-  //     setIsMobile(isMob);
-  //     if (isMob && inputRef.current) {
-  //       // Delay focus slightly for better reliability
-  //       setTimeout(() => inputRef.current?.focus(), 300);
-  //     }
-  //   };
-  //   checkMobile();
-  //   window.addEventListener("resize", checkMobile);
-  //   return () => window.removeEventListener("resize", checkMobile);
-  // }, []);
-
+  // Mobile input setup
   useEffect(() => {
     if (isMobile && inputRef.current) {
-      const handleFocus = () => inputRef.current?.focus();
+      const focusInput = () => inputRef.current?.focus();
 
-      // Initial focus with delay
-      const focusTimeout = setTimeout(handleFocus, 300);
+      // Initial focus
+      setTimeout(focusInput, 300);
 
-      // Focus on any tap
-      document.addEventListener("click", handleFocus);
+      // Focus on any screen tap
+      document.addEventListener("click", focusInput);
 
-      return () => {
-        clearTimeout(focusTimeout);
-        document.removeEventListener("click", handleFocus);
-      };
+      return () => document.removeEventListener("click", focusInput);
     }
   }, [isMobile]);
 
@@ -164,31 +143,59 @@ function App() {
     fetchWord();
   }, []);
 
-  // Enhanced mobile input handler
+  // New mobile input handler
   const handleMobileInput = (e) => {
     if (!isMobile) return;
 
-    const currentValue = e.target.value;
-    const newChar = currentValue.slice(-1); // Get last character typed
+    const value = e.target.value.toLowerCase();
 
     // Handle backspace
-    if (currentValue.length < lastInput.current.length) {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace" }));
-    }
-    // Handle enter
-    else if (currentValue.includes("\n")) {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
-      e.target.value = "";
-    }
-    // Handle regular character
-    else if (/^[a-zA-Z]$/.test(newChar)) {
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", { key: newChar.toLowerCase() })
-      );
+    if (value.length < gameState.curTry.length) {
+      setGameState((prev) => ({
+        ...prev,
+        curTry: prev.curTry.slice(0, -1),
+        curTryIndex: Math.max(prev.curTryIndex - 1, 0),
+      }));
+      return;
     }
 
-    lastInput.current = currentValue;
-    e.target.value = ""; // Reset input after processing
+    // Handle new characters
+    const newChar = value.slice(-1);
+    if (/^[a-z]$/.test(newChar) && gameState.curTry.length < 5) {
+      setGameState((prev) => ({
+        ...prev,
+        curTry: prev.curTry + newChar,
+        curTryIndex: prev.curTryIndex + 1,
+      }));
+    }
+
+    // Reset input value
+    e.target.value = "";
+  };
+
+  // Mobile-specific submit handler
+  const handleMobileSubmit = () => {
+    if (gameState.curTry.length === 5) {
+      // Your existing submit logic
+      setGameState((prev) => {
+        const newTry = [...prev.tries];
+        newTry[prev.tries.findIndex((val) => val == null)] = gameState.curTry;
+        return {
+          ...prev,
+          tries: newTry,
+          curTry: "",
+          curTryIndex: 0,
+        };
+      });
+
+      if (gameState.curTry === gameState.word) {
+        setGameState((prev) => ({
+          ...prev,
+          isGameOver: true,
+          isCorrect: true,
+        }));
+      }
+    }
   };
 
   const handleScreenClick = () => {
@@ -213,29 +220,44 @@ function App() {
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
 
+      {/* Mobile Input */}
       {isMobile && (
-        <input
-          ref={inputRef}
-          type="text"
-          onChange={handleMobileInput}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "1px",
-            height: "1px",
-            opacity: 0,
-            zIndex: 10,
-          }}
-          autoFocus
-          inputMode="text"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="none"
-          spellCheck="false"
-        />
+        <>
+          <input
+            ref={inputRef}
+            type="text"
+            onChange={handleMobileInput}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "50px",
+              opacity: 0,
+              zIndex: 10,
+              fontSize: "16px", // Prevent zoom on focus
+            }}
+            autoFocus
+            inputMode="text"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck="false"
+          />
+          <button
+            onClick={handleMobileSubmit}
+            style={{
+              position: "fixed",
+              bottom: "20px",
+              right: "20px",
+              padding: "10px 20px",
+              zIndex: 10,
+            }}
+          >
+            Submit
+          </button>
+        </>
       )}
-
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
           i === gameState.tries.findIndex((val) => val == null);
