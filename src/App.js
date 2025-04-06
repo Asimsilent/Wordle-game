@@ -18,16 +18,21 @@ function App() {
     )
   );
   const inputRef = useRef(null);
+  const lastValue = useRef("");
 
   // Mobile input setup
   useEffect(() => {
     if (isMobile && inputRef.current) {
-      const focusInput = () => inputRef.current?.focus();
+      const focusInput = () => {
+        inputRef.current?.focus();
+        // Ensure soft keyboard stays open
+        setTimeout(() => inputRef.current?.focus(), 100);
+      };
 
-      // Initial focus
-      setTimeout(focusInput, 300);
+      // Focus on mount
+      setTimeout(focusInput, 500);
 
-      // Focus on any screen tap
+      // Focus on any tap
       document.addEventListener("click", focusInput);
 
       return () => document.removeEventListener("click", focusInput);
@@ -143,58 +148,51 @@ function App() {
     fetchWord();
   }, []);
 
-  // New mobile input handler
   const handleMobileInput = (e) => {
     if (!isMobile) return;
 
     const value = e.target.value.toLowerCase();
 
-    // Handle backspace
-    if (value.length < gameState.curTry.length) {
+    // Detect backspace (keyboard's X button)
+    if (value.length < lastValue.current.length) {
       setGameState((prev) => ({
         ...prev,
         curTry: prev.curTry.slice(0, -1),
         curTryIndex: Math.max(prev.curTryIndex - 1, 0),
       }));
-      return;
+    }
+    // Detect new character
+    else if (value.length > lastValue.current.length) {
+      const newChar = value.slice(-1);
+      if (/^[a-z]$/.test(newChar) && gameState.curTry.length < 5) {
+        setGameState((prev) => ({
+          ...prev,
+          curTry: prev.curTry + newChar,
+          curTryIndex: prev.curTryIndex + 1,
+        }));
+      }
     }
 
-    // Handle new characters
-    const newChar = value.slice(-1);
-    if (/^[a-z]$/.test(newChar) && gameState.curTry.length < 5) {
-      setGameState((prev) => ({
-        ...prev,
-        curTry: prev.curTry + newChar,
-        curTryIndex: prev.curTryIndex + 1,
-      }));
-    }
-
-    // Reset input value
-    e.target.value = "";
+    lastValue.current = value;
+    e.target.value = ""; // Reset input
   };
 
-  // Mobile-specific submit handler
   const handleMobileSubmit = () => {
-    if (gameState.curTry.length === 5) {
+    if (gameState.curTry.length === 5 && !gameState.isGameOver) {
       // Your existing submit logic
       setGameState((prev) => {
         const newTry = [...prev.tries];
-        newTry[prev.tries.findIndex((val) => val == null)] = gameState.curTry;
+        newTry[prev.tries.findIndex((val) => val == null)] = prev.curTry;
+        const isCorrect = prev.curTry === prev.word;
         return {
           ...prev,
           tries: newTry,
           curTry: "",
           curTryIndex: 0,
+          isGameOver: isCorrect,
+          isCorrect: isCorrect,
         };
       });
-
-      if (gameState.curTry === gameState.word) {
-        setGameState((prev) => ({
-          ...prev,
-          isGameOver: true,
-          isCorrect: true,
-        }));
-      }
     }
   };
 
@@ -222,20 +220,20 @@ function App() {
 
       {/* Mobile Input */}
       {isMobile && (
-        <>
+        <div style={{ position: "relative" }}>
           <input
             ref={inputRef}
             type="text"
             onChange={handleMobileInput}
             style={{
               position: "fixed",
-              top: 0,
+              top: "50%",
               left: 0,
               width: "100%",
-              height: "50px",
+              height: "60px",
               opacity: 0,
               zIndex: 10,
-              fontSize: "16px", // Prevent zoom on focus
+              fontSize: "16px",
             }}
             autoFocus
             inputMode="text"
@@ -244,20 +242,27 @@ function App() {
             autoCapitalize="none"
             spellCheck="false"
           />
+          {/* Mobile Submit Button */}
           <button
             onClick={handleMobileSubmit}
             style={{
               position: "fixed",
               bottom: "20px",
               right: "20px",
-              padding: "10px 20px",
+              padding: "12px 24px",
+              backgroundColor: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              fontSize: "16px",
               zIndex: 10,
             }}
           >
             Submit
           </button>
-        </>
+        </div>
       )}
+
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
           i === gameState.tries.findIndex((val) => val == null);
