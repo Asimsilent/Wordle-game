@@ -24,10 +24,10 @@ function App() {
           return;
         }
 
-        if (!gameState.validWords.includes(gameState.curTry)) {
-          console.log("Invalid word, please try a valid word");
-          return;
-        }
+        // if (!gameState.validWords.includes(gameState.curTry)) {
+        //   console.log("Invalid word, please try a valid word");
+        //   return;
+        // }
 
         if (gameState.curTry.length === 5) {
           setGameState((prevTries) => {
@@ -104,7 +104,7 @@ function App() {
         const data = await res.json();
 
         const ValidWords = data.map((value) => value.word);
-        console.log(ValidWords);
+        // console.log(ValidWords);
 
         const randomWord = data[Math.floor(Math.random() * data.length)].word;
         setGameState((perState) => ({
@@ -132,7 +132,9 @@ function App() {
 
   return (
     <div className="app">
-      <h1>Worlde Game</h1>
+      <h1>لعبة ووردل</h1>
+      <h2>إهداء إلى إلين</h2>
+
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
           i === gameState.tries.findIndex((val) => val == null);
@@ -148,28 +150,43 @@ function App() {
       })}
 
       <button onClick={resetGame} className="button">
-        Reset Game
+        إعادة اللعبة
       </button>
+
+      <div className="instructions">
+        <p className="instruction">
+          <span style={{ backgroundColor: "lightgreen" }}></span>
+          <span>الحرف الصحيح في المكان الصحيح</span>
+        </p>
+        <p className="instruction">
+          <span style={{ backgroundColor: "yellow" }}></span>
+          <span>الحرف الصحيح في المكان الخطأ</span>
+        </p>
+        <p className="instruction">
+          <span style={{ backgroundColor: "rgba(164, 40, 40, 0.332)" }}></span>
+          <span>حرف غير صحيح</span>
+        </p>
+      </div>
+
+      <div className="note">سواء فزت أو خسرت، سأظل أحبك</div>
 
       {gameState.isCorrect === true && (
         <p className="win-message">
-          You have won the game in{" "}
+          لقد فزت باللعبة في{" "}
           <span>
             {gameState.tries.findIndex((val) => val == null) === -1
               ? 6
               : gameState.tries.findIndex((val) => val == null)}
           </span>{" "}
-          attempt
+          محاولة
         </p>
       )}
 
       {gameState.isCorrect === false && (
         <>
+          <p className="loss-message">لقد خسرت اللعبة، انتهت محاولاتك</p>
           <p className="loss-message">
-            You have lost the game, you tries ended
-          </p>
-          <p className="loss-message">
-            Correct word is <span>{gameState.word.toUpperCase()}</span>
+            الكلمة الصحيحة هي <span>{gameState.word.toUpperCase()}</span>
           </p>
         </>
       )}

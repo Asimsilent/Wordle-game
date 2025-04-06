@@ -1,10 +1,8 @@
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-
 
 #root {
   min-height: 100vh;
@@ -41,7 +39,19 @@ h1 {
   margin-bottom: 1rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  border-bottom: 2px solid #1e90ff;}
+  border-bottom: 2px solid #1e90ff;
+}
+
+h2 {
+  font-family: "Arial", sans-serif;
+  font-size: 1.5rem;
+  color: #1e90ff;
+  text-align: center;
+  /* padding: 1rem 0; */
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
 
 h1:hover {
   color: #ff6347;
@@ -79,18 +89,15 @@ h1:hover {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-
 .box.correct {
   background-color: lightgreen;
   color: white;
 }
 
-
 .box.close {
   background-color: yellow;
   color: black;
 }
-
 
 .box.incorrect {
   background-color: rgba(164, 40, 40, 0.332);
@@ -120,34 +127,67 @@ h1:hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.win-message, .loss-message {
+.instructions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+  gap: 5px;
+}
+
+.instruction {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.instruction span:first-child {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.instruction span:nth-of-type(2) {
+  font-size: 1.1rem;
+color: #D1B97F;;
+}
+
+.note{
+  color: rgb(59, 163, 232);
+  font-size: 1.2rem;
+}
+
+.win-message,
+.loss-message {
   font-size: 1.5rem;
   font-weight: 600;
   padding: 15px;
   border-radius: 8px;
   text-align: center;
   margin-top: 20px;
-  box-shadow: 0 4px 8px rgba(0, 128, 0, 0.2); /* Subtle shadow */
+  box-shadow: 0 4px 8px rgba(0, 128, 0, 0.2);
 }
 
 .win-message {
-  color: #28a745; /* Green for success */
-  background-color: #d4edda; /* Light green background */
+  color: #28a745;
+  background-color: #d4edda;
 }
 
 .win-message span {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #155724; /* Darker green for the attempt count */
+  color: #155724;
 }
 
 .loss-message {
-  color: #721c24; /* Red for failure */
-  background-color: #f8d7da; /* Light red background */
+  color: #721c24;
+  background-color: #f8d7da;
 }
 
 .loss-message span {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #721c24; /* Darker red for the word */
+  color: #721c24;
 }
