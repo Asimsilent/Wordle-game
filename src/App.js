@@ -12,7 +12,6 @@ function App() {
     validWords: [],
   });
 
-   
   const inputRef = useRef(null); // Added for mobile keyboard
 
   // Added useEffect to focus input on mount
@@ -24,7 +23,6 @@ function App() {
   const handleScreenClick = () => {
     inputRef.current?.focus();
   };
-  
 
   useEffect(() => {
     function handleTry(e) {
@@ -148,6 +146,31 @@ function App() {
     <div className="app" onClick={handleScreenClick}>
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
+
+      <input
+        ref={inputRef}
+        type="text"
+        value={gameState.curTry} // Controlled input
+        onChange={(e) => {
+          // Filter input to only allow letters and limit to 5 characters
+          const val = e.target.value
+            .replace(/[^a-zA-Z]/g, "")
+            .toLowerCase()
+            .slice(0, 5);
+          setGameState((prev) => ({
+            ...prev,
+            curTry: val,
+            curTryIndex: val.length,
+          }));
+        }}
+        style={{
+          position: "absolute",
+          opacity: 0,
+          height: 0,
+          width: 0,
+          pointerEvents: "none",
+        }}
+      />
 
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
