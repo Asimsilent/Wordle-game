@@ -147,6 +147,12 @@ function App() {
     }));
   };
 
+  const handleScreenClick = () => {
+    if (isMobile && inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   function resetGame() {
     setGameState({
       word: "",
@@ -159,7 +165,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" onClick={handleScreenClick}>
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
 
