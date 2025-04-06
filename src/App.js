@@ -17,138 +17,22 @@ function App() {
       navigator.userAgent
     )
   );
-  const inputRef = useRef(null);
-  const virtualKeyboard = useRef([]);
+  const [keyboardVisible, setKeyboardVisible] = useState(true);
+  const appRef = useRef(null);
 
-  // Mobile input setup
+  // Auto-hide keyboard when game ends
   useEffect(() => {
-    if (isMobile && inputRef.current) {
-      const focusInput = () => {
-        inputRef.current?.focus();
-        // Ensure soft keyboard stays open
-        setTimeout(() => inputRef.current?.focus(), 100);
-      };
-
-      // Focus on mount
-      setTimeout(focusInput, 500);
-
-      // Focus on any tap
-      document.addEventListener("click", focusInput);
-
-      return () => document.removeEventListener("click", focusInput);
+    if (gameState.isGameOver) {
+      setKeyboardVisible(false);
     }
-  }, [isMobile]);
+  }, [gameState.isGameOver]);
 
-  useEffect(() => {
-    function handleTry(e) {
-      if (gameState.isGameOver || isMobile) {
-        return;
-      }
+  // Handle keyboard toggle
+  const toggleKeyboard = () => {
+    setKeyboardVisible(!keyboardVisible);
+  };
 
-      if (e.key === "Enter") {
-        if (gameState.curTry.length !== 5) {
-          console.log("Enter a 5-letter word");
-          return;
-        }
-
-        // if (!gameState.validWords.includes(gameState.curTry)) {
-        //   console.log("Invalid word, please try a valid word");
-        //   return;
-        // }
-
-        if (gameState.curTry.length === 5) {
-          setGameState((prevTries) => {
-            const newTry = [...prevTries.tries];
-            newTry[prevTries.tries.findIndex((val) => val == null)] =
-              gameState.curTry;
-            return { ...prevTries, tries: newTry, curTry: "", curTryIndex: 0 };
-          });
-          console.log("Try has been set");
-        }
-
-        if (gameState.curTry === gameState.word) {
-          setGameState((perState) => ({
-            ...perState,
-            isGameOver: true,
-            isCorrect: true,
-          }));
-        }
-      }
-
-      if (e.key === "Backspace") {
-        setGameState((perState) => ({
-          ...perState,
-          curTry: gameState.curTry.slice(0, -1),
-          curTryIndex: Math.max(perState.curTryIndex - 1, 0),
-        }));
-        return;
-      }
-
-      if (/^[a-z]$/i.test(e.key)) {
-        if (gameState.curTry.length < 5) {
-          setGameState((perState) => ({
-            ...perState,
-            curTry: perState.curTry + e.key,
-            curTryIndex: perState.curTryIndex + 1,
-          }));
-        } else {
-          console.log("more words");
-        }
-      }
-    }
-    if (!isMobile) {
-      window.addEventListener("keydown", handleTry);
-
-      return () => window.removeEventListener("keydown", handleTry);
-    }
-  }, [gameState, isMobile]);
-
-  useEffect(() => {
-    // console.log(gameState.curTry);
-
-    function failed() {
-      console.log("tries ended");
-      setGameState((perState) => ({
-        ...perState,
-        isGameOver: true,
-        isCorrect: false,
-      }));
-    }
-    if (
-      gameState.tries.findIndex((val) => val == null) === -1 &&
-      !gameState.isCorrect &&
-      !gameState.isGameOver
-    ) {
-      failed();
-    }
-  }, [gameState]);
-
-  useEffect(() => {
-    async function fetchWord() {
-      try {
-        const res = await fetch(
-          "https://api.datamuse.com/words?sp=?????&max=1000"
-        );
-
-        const data = await res.json();
-
-        const ValidWords = data.map((value) => value.word);
-        // console.log(ValidWords);
-
-        const randomWord = data[Math.floor(Math.random() * data.length)].word;
-        setGameState((perState) => ({
-          ...perState,
-          word: randomWord || "",
-          validWords: ValidWords,
-        }));
-      } catch (error) {
-        console.error("Error fetching word list", error);
-      }
-    }
-    fetchWord();
-  }, []);
-
-  // Mobile input handler - completely new approach
+  // Mobile keyboard handler
   const handleMobileKeyPress = (key) => {
     if (gameState.isGameOver) return;
 
@@ -191,86 +75,214 @@ function App() {
 
   // Mobile keyboard component
   const MobileKeyboard = () => (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: "#f0f0f0",
-        padding: "10px",
-        display: "grid",
-        gridTemplateColumns: "repeat(10, 1fr)",
-        gap: "5px",
-        zIndex: 10,
-      }}
-    >
-      {[
-        "q",
-        "w",
-        "e",
-        "r",
-        "t",
-        "y",
-        "u",
-        "i",
-        "o",
-        "p",
-        "a",
-        "s",
-        "d",
-        "f",
-        "g",
-        "h",
-        "j",
-        "k",
-        "l",
-        "z",
-        "x",
-        "c",
-        "v",
-        "b",
-        "n",
-        "m",
-      ].map((char) => (
-        <button
+    <div style={{
+      position: 'fixed',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: '#f0f0f0',
+      padding: '10px',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(10, 1fr)',
+      gap: '5px',
+      zIndex: 10,
+      transform: keyboardVisible ? 'translateY(0)' : 'translateY(100%)',
+      transition: 'transform 0.3s ease'
+    }}>
+      {['q','w','e','r','t','y','u','i','o','p'].map(char => (
+        <button 
           key={char}
           onClick={() => handleMobileKeyPress(char)}
-          style={{
-            padding: "10px",
-            fontSize: "18px",
-            border: "none",
-            borderRadius: "5px",
-            backgroundColor: "#fff",
-          }}
+          style={keyButtonStyle}
         >
           {char}
         </button>
       ))}
-      <button
-        onClick={() => handleMobileKeyPress("Backspace")}
+      <div style={{gridColumn: 'span 10'}}></div>
+      {['a','s','d','f','g','h','j','k','l'].map(char => (
+        <button 
+          key={char}
+          onClick={() => handleMobileKeyPress(char)}
+          style={keyButtonStyle}
+        >
+          {char}
+        </button>
+      ))}
+      <div style={{gridColumn: 'span 10'}}></div>
+      <button 
+        onClick={() => handleMobileKeyPress('z')}
+        style={keyButtonStyle}
+      >
+        z
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('x')}
+        style={keyButtonStyle}
+      >
+        x
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('c')}
+        style={keyButtonStyle}
+      >
+        c
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('v')}
+        style={keyButtonStyle}
+      >
+        v
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('b')}
+        style={keyButtonStyle}
+      >
+        b
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('n')}
+        style={keyButtonStyle}
+      >
+        n
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('m')}
+        style={keyButtonStyle}
+      >
+        m
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('Backspace')}
         style={{
-          gridColumn: "span 3",
-          padding: "10px",
-          backgroundColor: "#ff4444",
-          color: "white",
+          ...keyButtonStyle,
+          backgroundColor: '#ff4444',
+          color: 'white',
+          gridColumn: 'span 3'
         }}
       >
         ⌫
       </button>
-      <button
-        onClick={() => handleMobileKeyPress("Enter")}
+      <button 
+        onClick={() => toggleKeyboard()}
         style={{
-          gridColumn: "span 3",
-          padding: "10px",
-          backgroundColor: "#4CAF50",
-          color: "white",
+          ...keyButtonStyle,
+          backgroundColor: '#666',
+          color: 'white'
+        }}
+      >
+        {keyboardVisible ? '⌄' : '⌃'}
+      </button>
+      <button 
+        onClick={() => handleMobileKeyPress('Enter')}
+        style={{
+          ...keyButtonStyle,
+          backgroundColor: '#4CAF50',
+          color: 'white',
+          gridColumn: 'span 3'
         }}
       >
         Enter
       </button>
     </div>
   );
+
+  // Style for keyboard buttons
+  const keyButtonStyle = {
+    padding: '10px',
+    fontSize: '18px',
+    border: 'none',
+    borderRadius: '5px',
+    backgroundColor: '#fff'
+  };
+
+  // Desktop keyboard handler
+  useEffect(() => {
+    if (isMobile) return;
+
+    function handleTry(e) {
+      if (gameState.isGameOver) return;
+
+      if (e.key === "Enter") {
+        if (gameState.curTry.length !== 5) {
+          console.log("Enter a 5-letter word");
+          return;
+        }
+
+        setGameState((prevTries) => {
+          const newTry = [...prevTries.tries];
+          newTry[prevTries.tries.findIndex((val) => val == null)] =
+            gameState.curTry;
+          const isCorrect = gameState.curTry === gameState.word;
+          return { 
+            ...prevTries, 
+            tries: newTry, 
+            curTry: "", 
+            curTryIndex: 0,
+            isGameOver: isCorrect,
+            isCorrect: isCorrect
+          };
+        });
+        return;
+      }
+
+      if (e.key === "Backspace") {
+        setGameState((perState) => ({
+          ...perState,
+          curTry: gameState.curTry.slice(0, -1),
+          curTryIndex: Math.max(perState.curTryIndex - 1, 0),
+        }));
+        return;
+      }
+
+      if (/^[a-z]$/i.test(e.key) && gameState.curTry.length < 5) {
+        setGameState((perState) => ({
+          ...perState,
+          curTry: perState.curTry + e.key.toLowerCase(),
+          curTryIndex: perState.curTryIndex + 1,
+        }));
+      }
+    }
+
+    window.addEventListener("keydown", handleTry);
+    return () => window.removeEventListener("keydown", handleTry);
+  }, [gameState, isMobile]);
+
+  // Game over check
+  useEffect(() => {
+    if (
+      gameState.tries.findIndex((val) => val == null) === -1 &&
+      !gameState.isCorrect &&
+      !gameState.isGameOver
+    ) {
+      setGameState(prev => ({
+        ...prev,
+        isGameOver: true,
+        isCorrect: false
+      }));
+    }
+  }, [gameState]);
+
+  // Fetch word
+  useEffect(() => {
+    async function fetchWord() {
+      try {
+        const res = await fetch(
+          "https://api.datamuse.com/words?sp=?????&max=1000"
+        );
+        const data = await res.json();
+        const validWords = data.map(value => value.word);
+        const randomWord = data[Math.floor(Math.random() * data.length)].word;
+        setGameState(prev => ({
+          ...prev,
+          word: randomWord || "",
+          validWords: validWords,
+        }));
+      } catch (error) {
+        console.error("Error fetching word list", error);
+      }
+    }
+    fetchWord();
+  }, []);
 
   function resetGame() {
     setGameState({
@@ -280,16 +292,24 @@ function App() {
       isGameOver: false,
       isCorrect: null,
       curTryIndex: 0,
+      validWords: [],
     });
+    if (isMobile) {
+      setKeyboardVisible(true);
+    }
   }
 
   return (
-    <div className="app">
+    <div 
+      className="app" 
+      ref={appRef}
+      style={{ 
+        paddingBottom: isMobile ? (keyboardVisible ? '250px' : '20px') : '20px',
+        transition: 'padding-bottom 0.3s ease'
+      }}
+    >
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
-
-      {/* Add mobile keyboard */}
-      {isMobile && <MobileKeyboard />}
 
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
@@ -326,26 +346,42 @@ function App() {
 
       <div className="note">سواء فزت أو خسرت، سأظل أحبك</div>
 
-      {gameState.isCorrect === true && (
-        <p className="win-message">
-          لقد فزت باللعبة في{" "}
-          <span>
-            {gameState.tries.findIndex((val) => val == null) === -1
-              ? 6
-              : gameState.tries.findIndex((val) => val == null)}
-          </span>{" "}
-          محاولة
-        </p>
-      )}
-
-      {gameState.isCorrect === false && (
-        <>
-          <p className="loss-message">لقد خسرت اللعبة، انتهت محاولاتك</p>
-          <p className="loss-message">
-            الكلمة الصحيحة هي <span>{gameState.word.toUpperCase()}</span>
+      {/* Game messages positioned above keyboard */}
+      <div style={{
+        position: isMobile ? 'fixed' : 'static',
+        bottom: isMobile ? (keyboardVisible ? '250px' : '20px') : 'auto',
+        left: 0,
+        right: 0,
+        zIndex: 5,
+        padding: '10px',
+        backgroundColor: isMobile ? 'rgba(0,0,0,0.7)' : 'transparent',
+        color: isMobile ? 'white' : 'inherit',
+        textAlign: 'center',
+        transition: 'bottom 0.3s ease'
+      }}>
+        {gameState.isCorrect === true && (
+          <p className="win-message">
+            لقد فزت باللعبة في{" "}
+            <span>
+              {gameState.tries.findIndex((val) => val == null) === -1
+                ? 6
+                : gameState.tries.findIndex((val) => val == null)}
+            </span>{" "}
+            محاولة
           </p>
-        </>
-      )}
+        )}
+        {gameState.isCorrect === false && (
+          <>
+            <p className="loss-message">لقد خسرت اللعبة، انتهت محاولاتك</p>
+            <p className="loss-message">
+              الكلمة الصحيحة هي <span>{gameState.word.toUpperCase()}</span>
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Mobile keyboard */}
+      {isMobile && <MobileKeyboard />}
     </div>
   );
 }
