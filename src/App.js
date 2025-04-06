@@ -12,27 +12,48 @@ function App() {
     validWords: [],
   });
 
-  const [isMobile, setIsMobile] = useState(false);
-  const inputRef = useRef(null); // Added for mobile keyboard
-  const lastInputValue = useRef(""); // Track input value
+  const [isMobile] = useState(
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+  );
+  const inputRef = useRef(null);
+  const lastInput = useRef(""); // Track input value
 
   // Detect mobile device
+  // useEffect(() => {
+  //   const checkMobile = () => {
+  //     const isMob =
+  //       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  //         navigator.userAgent
+  //       );
+  //     setIsMobile(isMob);
+  //     if (isMob && inputRef.current) {
+  //       // Delay focus slightly for better reliability
+  //       setTimeout(() => inputRef.current?.focus(), 300);
+  //     }
+  //   };
+  //   checkMobile();
+  //   window.addEventListener("resize", checkMobile);
+  //   return () => window.removeEventListener("resize", checkMobile);
+  // }, []);
+
   useEffect(() => {
-    const checkMobile = () => {
-      const isMob =
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        );
-      setIsMobile(isMob);
-      if (isMob && inputRef.current) {
-        // Delay focus slightly for better reliability
-        setTimeout(() => inputRef.current?.focus(), 300);
-      }
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+    if (isMobile && inputRef.current) {
+      const handleFocus = () => inputRef.current?.focus();
+
+      // Initial focus with delay
+      const focusTimeout = setTimeout(handleFocus, 300);
+
+      // Focus on any tap
+      document.addEventListener("click", handleFocus);
+
+      return () => {
+        clearTimeout(focusTimeout);
+        document.removeEventListener("click", handleFocus);
+      };
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     function handleTry(e) {
@@ -143,41 +164,31 @@ function App() {
     fetchWord();
   }, []);
 
-  const handleInputChange = (e) => {
+  // Enhanced mobile input handler
+  const handleMobileInput = (e) => {
     if (!isMobile) return;
 
-    const val = e.target.value.toLowerCase();
+    const currentValue = e.target.value;
+    const newChar = currentValue.slice(-1); // Get last character typed
 
-    // Handle backspace properly
-    if (val.length < lastInputValue.current.length) {
-      setGameState((prev) => ({
-        ...prev,
-        curTry: prev.curTry.slice(0, -1),
-        curTryIndex: Math.max(prev.curTryIndex - 1, 0),
-      }));
+    // Handle backspace
+    if (currentValue.length < lastInput.current.length) {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace" }));
     }
-    // Handle new letters
-    else if (/^[a-z]+$/.test(val) && val.length <= 5) {
-      const newChar = val.slice(-1);
-      setGameState((prev) => ({
-        ...prev,
-        curTry: (prev.curTry + newChar).slice(0, 5),
-        curTryIndex: Math.min(prev.curTryIndex + 1, 5),
-      }));
+    // Handle enter
+    else if (currentValue.includes("\n")) {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+      e.target.value = "";
     }
-
-    // Reset input value while maintaining cursor position
-    if (inputRef.current) {
-      const cursorPos = inputRef.current.selectionStart;
-      inputRef.current.value = "";
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.setSelectionRange(cursorPos, cursorPos);
-        }
-      }, 0);
+    // Handle regular character
+    else if (/^[a-zA-Z]$/.test(newChar)) {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", { key: newChar.toLowerCase() })
+      );
     }
 
-    lastInputValue.current = val;
+    lastInput.current = currentValue;
+    e.target.value = ""; // Reset input after processing
   };
 
   const handleScreenClick = () => {
@@ -206,21 +217,22 @@ function App() {
         <input
           ref={inputRef}
           type="text"
-          value={gameState.curTry}
-          onChange={handleInputChange}
+          onChange={handleMobileInput}
           style={{
             position: "fixed",
             top: 0,
             left: 0,
             width: "1px",
             height: "1px",
-            opacity: 0.01,
-            zIndex: -1,
-            direction: "ltr",
+            opacity: 0,
+            zIndex: 10,
           }}
           autoFocus
           inputMode="text"
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck="false"
         />
       )}
 
