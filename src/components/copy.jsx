@@ -41,3 +41,42 @@
 //     console.log("Cannot type more than 5 letters");
 //   }
 // }
+
+
+
+
+
+
+const [isMobile, setIsMobile] = useState(false);
+const inputRef = useRef(null);
+
+// Detect mobile device
+useEffect(() => {
+  setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+}, []);
+
+// Modified handleTry to prevent double input
+useEffect(() => {
+  function handleTry(e) {
+    if (gameState.isGameOver || isMobile) return; // Skip if mobile
+
+    // ... rest of your existing handleTry logic
+  }
+
+  if (!isMobile) {
+    window.addEventListener("keydown", handleTry);
+    return () => window.removeEventListener("keydown", handleTry);
+  }
+}, [gameState, isMobile]);
+
+// Modified input change handler
+const handleInputChange = (e) => {
+  if (!isMobile) return; // Only handle input changes on mobile
+  
+  const val = e.target.value.replace(/[^a-zA-Z]/g, '').toLowerCase().slice(0, 5);
+  setGameState(prev => ({
+    ...prev,
+    curTry: val,
+    curTryIndex: val.length
+  }));
+};

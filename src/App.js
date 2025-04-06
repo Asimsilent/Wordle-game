@@ -12,21 +12,21 @@ function App() {
     validWords: [],
   });
 
+  const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef(null); // Added for mobile keyboard
 
-  // Added useEffect to focus input on mount
+  // Detect mobile device
   useEffect(() => {
-    inputRef.current?.focus();
+    setIsMobile(
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      )
+    );
   }, []);
-
-  // Added click handler to focus input when screen is tapped
-  const handleScreenClick = () => {
-    inputRef.current?.focus();
-  };
 
   useEffect(() => {
     function handleTry(e) {
-      if (gameState.isGameOver) {
+      if (gameState.isGameOver || isMobile) {
         return;
       }
 
@@ -81,10 +81,12 @@ function App() {
         }
       }
     }
-    window.addEventListener("keydown", handleTry);
+    if (!isMobile) {
+      window.addEventListener("keydown", handleTry);
 
-    return () => window.removeEventListener("keydown", handleTry);
-  }, [gameState]);
+      return () => window.removeEventListener("keydown", handleTry);
+    }
+  }, [gameState, isMobile]);
 
   useEffect(() => {
     // console.log(gameState.curTry);
@@ -131,6 +133,20 @@ function App() {
     fetchWord();
   }, []);
 
+  const handleInputChange = (e) => {
+    if (!isMobile) return; // Only handle input changes on mobile
+
+    const val = e.target.value
+      .replace(/[^a-zA-Z]/g, "")
+      .toLowerCase()
+      .slice(0, 5);
+    setGameState((prev) => ({
+      ...prev,
+      curTry: val,
+      curTryIndex: val.length,
+    }));
+  };
+
   function resetGame() {
     setGameState({
       word: "",
@@ -143,34 +159,31 @@ function App() {
   }
 
   return (
-    <div className="app" onClick={handleScreenClick}>
+    <div className="app">
       <h1>لعبة ووردل</h1>
       <h2>إهداء إلى إلين</h2>
 
-      <input
-        ref={inputRef}
-        type="text"
-        value={gameState.curTry} // Controlled input
-        onChange={(e) => {
-          // Filter input to only allow letters and limit to 5 characters
-          const val = e.target.value
-            .replace(/[^a-zA-Z]/g, "")
-            .toLowerCase()
-            .slice(0, 5);
-          setGameState((prev) => ({
-            ...prev,
-            curTry: val,
-            curTryIndex: val.length,
-          }));
-        }}
-        style={{
-          position: "absolute",
-          opacity: 0,
-          height: 0,
-          width: 0,
-          pointerEvents: "none",
-        }}
-      />
+      {isMobile && (
+        <input
+          ref={inputRef}
+          type="text"
+          value={gameState.curTry}
+          onChange={handleInputChange}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "1px",
+            height: "1px",
+            opacity: 0.01,
+            zIndex: -1,
+            direction: "ltr",
+          }}
+          autoFocus
+          inputMode="text"
+          autoComplete="off"
+        />
+      )}
 
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
