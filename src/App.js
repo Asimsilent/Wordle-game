@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Line from "./components/Line";
 
 function App() {
@@ -12,67 +12,72 @@ function App() {
     validWords: [],
   });
 
-  useEffect(() => {
-    function handleTry(e) {
-      if (gameState.isGameOver) {
+  const inputRef = useRef(null);
+
+  function handleTry(e) {
+    if (gameState.isGameOver) {
+      return;
+    }
+
+    if (e.key === "Enter") {
+      if (gameState.curTry.length !== 5) {
+        console.log("Enter a 5-letter word");
         return;
       }
 
-      if (e.key === "Enter") {
-        if (gameState.curTry.length !== 5) {
-          console.log("Enter a 5-letter word");
-          return;
-        }
+      // if (!gameState.validWords.includes(gameState.curTry)) {
+      //   console.log("Invalid word, please try a valid word");
+      //   return;
+      // }
 
-        // if (!gameState.validWords.includes(gameState.curTry)) {
-        //   console.log("Invalid word, please try a valid word");
-        //   return;
-        // }
-
-        if (gameState.curTry.length === 5) {
-          setGameState((prevTries) => {
-            const newTry = [...prevTries.tries];
-            newTry[prevTries.tries.findIndex((val) => val == null)] =
-              gameState.curTry;
-            return { ...prevTries, tries: newTry, curTry: "", curTryIndex: 0 };
-          });
-          console.log("Try has been set");
-        }
-
-        if (gameState.curTry === gameState.word) {
-          setGameState((perState) => ({
-            ...perState,
-            isGameOver: true,
-            isCorrect: true,
-          }));
-        }
+      if (gameState.curTry.length === 5) {
+        setGameState((prevTries) => {
+          const newTry = [...prevTries.tries];
+          newTry[prevTries.tries.findIndex((val) => val == null)] =
+            gameState.curTry;
+          return { ...prevTries, tries: newTry, curTry: "", curTryIndex: 0 };
+        });
+        console.log("Try has been set");
       }
 
-      if (e.key === "Backspace") {
+      if (gameState.curTry === gameState.word) {
         setGameState((perState) => ({
           ...perState,
-          curTry: gameState.curTry.slice(0, -1),
-          curTryIndex: Math.max(perState.curTryIndex - 1, 0),
+          isGameOver: true,
+          isCorrect: true,
         }));
-        return;
-      }
-
-      if (/^[a-z]$/i.test(e.key)) {
-        if (gameState.curTry.length < 5) {
-          setGameState((perState) => ({
-            ...perState,
-            curTry: perState.curTry + e.key,
-            curTryIndex: perState.curTryIndex + 1,
-          }));
-        } else {
-          console.log("more words");
-        }
       }
     }
+
+    if (e.key === "Backspace") {
+      setGameState((perState) => ({
+        ...perState,
+        curTry: gameState.curTry.slice(0, -1),
+        curTryIndex: Math.max(perState.curTryIndex - 1, 0),
+      }));
+      return;
+    }
+
+    if (/^[a-z]$/i.test(e.key)) {
+      if (gameState.curTry.length < 5) {
+        setGameState((perState) => ({
+          ...perState,
+          curTry: perState.curTry + e.key,
+          curTryIndex: perState.curTryIndex + 1,
+        }));
+      } else {
+        console.log("more words");
+      }
+    }
+  }
+
+  useEffect(() => {
+    inputRef.current?.focus();
+
     window.addEventListener("keydown", handleTry);
 
     return () => window.removeEventListener("keydown", handleTry);
-  }, [gameState]);
+  }, []);
 
   useEffect(() => {
     // console.log(gameState.curTry);
@@ -128,6 +133,7 @@ function App() {
       isCorrect: null,
       curTryIndex: 0,
     });
+    inputRef.current?.focus();
   }
 
   return (
