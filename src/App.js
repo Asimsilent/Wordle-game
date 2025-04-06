@@ -14,14 +14,24 @@ function App() {
 
   const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef(null); // Added for mobile keyboard
+  const lastInputValue = useRef(""); // Track input value
 
   // Detect mobile device
   useEffect(() => {
-    setIsMobile(
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      )
-    );
+    const checkMobile = () => {
+      const isMob =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+      setIsMobile(isMob);
+      if (isMob && inputRef.current) {
+        // Delay focus slightly for better reliability
+        setTimeout(() => inputRef.current?.focus(), 300);
+      }
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
@@ -134,17 +144,40 @@ function App() {
   }, []);
 
   const handleInputChange = (e) => {
-    if (!isMobile) return; // Only handle input changes on mobile
+    if (!isMobile) return;
 
-    const val = e.target.value
-      .replace(/[^a-zA-Z]/g, "")
-      .toLowerCase()
-      .slice(0, 5);
-    setGameState((prev) => ({
-      ...prev,
-      curTry: val,
-      curTryIndex: val.length,
-    }));
+    const val = e.target.value.toLowerCase();
+
+    // Handle backspace properly
+    if (val.length < lastInputValue.current.length) {
+      setGameState((prev) => ({
+        ...prev,
+        curTry: prev.curTry.slice(0, -1),
+        curTryIndex: Math.max(prev.curTryIndex - 1, 0),
+      }));
+    }
+    // Handle new letters
+    else if (/^[a-z]+$/.test(val) && val.length <= 5) {
+      const newChar = val.slice(-1);
+      setGameState((prev) => ({
+        ...prev,
+        curTry: (prev.curTry + newChar).slice(0, 5),
+        curTryIndex: Math.min(prev.curTryIndex + 1, 5),
+      }));
+    }
+
+    // Reset input value while maintaining cursor position
+    if (inputRef.current) {
+      const cursorPos = inputRef.current.selectionStart;
+      inputRef.current.value = "";
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.setSelectionRange(cursorPos, cursorPos);
+        }
+      }, 0);
+    }
+
+    lastInputValue.current = val;
   };
 
   const handleScreenClick = () => {
