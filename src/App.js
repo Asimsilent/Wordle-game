@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Line from "./components/Line";
 
 function App() {
@@ -12,35 +12,9 @@ function App() {
     validWords: [],
   });
 
-  const [isMobile] = useState(
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    )
-  );
-  const inputRef = useRef(null);
-
-  // Mobile input setup
-  useEffect(() => {
-    if (isMobile && inputRef.current) {
-      const focusInput = () => {
-        inputRef.current?.focus();
-        // Ensure soft keyboard stays open
-        setTimeout(() => inputRef.current?.focus(), 100);
-      };
-
-      // Focus on mount
-      setTimeout(focusInput, 500);
-
-      // Focus on any tap
-      document.addEventListener("click", focusInput);
-
-      return () => document.removeEventListener("click", focusInput);
-    }
-  }, [isMobile]);
-
   useEffect(() => {
     function handleTry(e) {
-      if (gameState.isGameOver || isMobile) {
+      if (gameState.isGameOver) {
         return;
       }
 
@@ -95,12 +69,10 @@ function App() {
         }
       }
     }
-    if (!isMobile) {
-      window.addEventListener("keydown", handleTry);
+    window.addEventListener("keydown", handleTry);
 
-      return () => window.removeEventListener("keydown", handleTry);
-    }
-  }, [gameState, isMobile]);
+    return () => window.removeEventListener("keydown", handleTry);
+  }, [gameState]);
 
   useEffect(() => {
     // console.log(gameState.curTry);
@@ -145,131 +117,9 @@ function App() {
       }
     }
     fetchWord();
-  }, []);
-
-  // Mobile input handler - completely new approach
-  const handleMobileKeyPress = (key) => {
-    if (gameState.isGameOver) return;
-
-    if (key === "Enter") {
-      if (gameState.curTry.length === 5) {
-        setGameState((prev) => {
-          const newTry = [...prev.tries];
-          newTry[prev.tries.findIndex((val) => val == null)] = prev.curTry;
-          const isCorrect = prev.curTry === prev.word;
-          return {
-            ...prev,
-            tries: newTry,
-            curTry: "",
-            curTryIndex: 0,
-            isGameOver: isCorrect,
-            isCorrect: isCorrect,
-          };
-        });
-      }
-      return;
-    }
-
-    if (key === "Backspace") {
-      setGameState((prev) => ({
-        ...prev,
-        curTry: prev.curTry.slice(0, -1),
-        curTryIndex: Math.max(prev.curTryIndex - 1, 0),
-      }));
-      return;
-    }
-
-    if (/^[a-z]$/.test(key) && gameState.curTry.length < 5) {
-      setGameState((prev) => ({
-        ...prev,
-        curTry: prev.curTry + key,
-        curTryIndex: prev.curTryIndex + 1,
-      }));
-    }
-  };
-
-  // Mobile keyboard component
-  const MobileKeyboard = () => (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: "#f0f0f0",
-        padding: "10px",
-        display: "grid",
-        gridTemplateColumns: "repeat(10, 1fr)",
-        gap: "5px",
-        zIndex: 10,
-      }}
-    >
-      {[
-        "q",
-        "w",
-        "e",
-        "r",
-        "t",
-        "y",
-        "u",
-        "i",
-        "o",
-        "p",
-        "a",
-        "s",
-        "d",
-        "f",
-        "g",
-        "h",
-        "j",
-        "k",
-        "l",
-        "z",
-        "x",
-        "c",
-        "v",
-        "b",
-        "n",
-        "m",
-      ].map((char) => (
-        <button
-          key={char}
-          onClick={() => handleMobileKeyPress(char)}
-          style={{
-            padding: "10px",
-            fontSize: "18px",
-            border: "none",
-            borderRadius: "5px",
-            backgroundColor: "#fff",
-          }}
-        >
-          {char}
-        </button>
-      ))}
-      <button
-        onClick={() => handleMobileKeyPress("Backspace")}
-        style={{
-          gridColumn: "span 3",
-          padding: "10px",
-          backgroundColor: "#ff4444",
-          color: "white",
-        }}
-      >
-        ⌫
-      </button>
-      <button
-        onClick={() => handleMobileKeyPress("Enter")}
-        style={{
-          gridColumn: "span 3",
-          padding: "10px",
-          backgroundColor: "#4CAF50",
-          color: "white",
-        }}
-      >
-        Enter
-      </button>
-    </div>
-  );
+    console.log("word fetched");
+    
+  }, [gameState.isGameOver]);
 
   function resetGame() {
     setGameState({
@@ -284,11 +134,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1>لعبة ووردل</h1>
-      <h2>إهداء إلى إلين</h2>
-
-      {/* Add mobile keyboard */}
-      {isMobile && !gameState.isGameOver && <MobileKeyboard />}
+      <h1>WORDLE GAME</h1>
 
       {gameState.tries.map((attempt, i) => {
         const isCurrentGuess =
@@ -305,43 +151,41 @@ function App() {
       })}
 
       <button onClick={resetGame} className="button">
-        إعادة اللعبة
+        Clear
       </button>
 
       <div className="instructions">
         <p className="instruction">
           <span style={{ backgroundColor: "lightgreen" }}></span>
-          <span>الحرف الصحيح في المكان الصحيح</span>
+          <span>The correct letter in the correct place</span>
         </p>
         <p className="instruction">
           <span style={{ backgroundColor: "yellow" }}></span>
-          <span>الحرف الصحيح في المكان الخطأ</span>
+          <span>The correct letter in the wrong place</span>
         </p>
         <p className="instruction">
           <span style={{ backgroundColor: "rgba(164, 40, 40, 0.332)" }}></span>
-          <span>حرف غير صحيح</span>
+          <span>Invalid character</span>
         </p>
       </div>
 
-      <div className="note">سواء فزت أو خسرت، سأظل أحبك</div>
-
       {gameState.isCorrect === true && (
         <p className="win-message">
-          لقد فزت باللعبة في{" "}
+          you won the game in
           <span>
             {gameState.tries.findIndex((val) => val == null) === -1
               ? 6
               : gameState.tries.findIndex((val) => val == null)}
           </span>{" "}
-          محاولة
+          attempts
         </p>
       )}
 
       {gameState.isCorrect === false && (
         <>
-          <p className="loss-message">لقد خسرت اللعبة، انتهت محاولاتك</p>
+          <p className="loss-message">you lost</p>
           <p className="loss-message">
-            الكلمة الصحيحة هي <span>{gameState.word.toUpperCase()}</span>
+            correct word is <span>{gameState.word.toUpperCase()}</span>
           </p>
         </>
       )}
